@@ -1,5 +1,7 @@
 -module(krepl_example_handler).
 
+-behaviour(krepl_callback).
+
 -export([init/2, handle/3]).
 
 init(Topic, InitData) ->
