@@ -1,0 +1,89 @@
+#!/bin/sh
+APP_MODULE=krepl
+APP_DIR=`pwd`
+COOKIE="krepl_cookie"
+CONFIG_ENV=$2
+CONFIG_FILE="config/$CONFIG_ENV.config"
+NAME="krepl_$CONFIG_ENV"
+NODE_NAME=$NAME@`hostname -f`
+
+# shift around so we have the argument in $1
+shift $(( OPTIND - 1 ));
+
+## Check the first argument for instructions
+case "$1" in
+    start)
+        erl -detached -pa $APP_DIR/deps/*/ebin $APP_DIR/ebin \
+            -setcookie $COOKIE -name $NODE_NAME \
+            -args_file $APP_DIR/config/vm.args \
+            -s $APP_MODULE \
+            -config $CONFIG_FILE $ARGS
+        ;;
+    console)
+        erl -pa $APP_DIR/deps/*/ebin $APP_DIR/ebin -setcookie $COOKIE \
+            -args_file $APP_DIR/config/vm.args \
+            -name $NODE_NAME \
+            -s $APP_MODULE \
+            -config $CONFIG_FILE $ARGS \
+            -krepl report true
+        ;;
+    attach)
+        erl -hidden -name ${NAME}_attacher_${RANDOM}@`hostname` -setcookie $COOKIE \
+            -remsh $NODE_NAME
+        ;;
+    running)
+        REPLY=`erl_call -c $COOKIE -name $NODE_NAME -a 'krepl running' > /dev/stdout 2>&1`;
+        echo $REPLY
+        if [ "$REPLY" == "true" ]; then
+          echo "true"
+        else
+          echo "false"
+        fi
+        ;;
+    status)
+        exec erl_call -c $COOKIE -name $NODE_NAME -a 'krepl status' |sed 's/"//g'|sed 's/\\n/$/g' | tr "$" "\n"
+        ;;
+    reset_offsets)
+        erl -pa $APP_DIR/deps/*/ebin $APP_DIR/ebin \
+            -setcookie $COOKIE -name $NODE_NAME \
+            -args_file $APP_DIR/config/vm.args \
+            -config $CONFIG_FILE $ARGS \
+            -eval 'krepl:reset_offsets(), init:stop().'
+        ;;
+    reset_to_oldest_offsets)
+        erl -pa $APP_DIR/deps/*/ebin $APP_DIR/ebin \
+            -setcookie $COOKIE -name $NODE_NAME \
+            -args_file $APP_DIR/config/vm.args \
+            -config $CONFIG_FILE $ARGS \
+            -eval 'krepl:reset_to_oldest_offsets(), init:stop().'
+        ;;
+    zero_offsets)
+        erl -pa $APP_DIR/deps/*/ebin $APP_DIR/ebin \
+            -setcookie $COOKIE -name $NODE_NAME \
+            -args_file $APP_DIR/config/vm.args \
+            -config $CONFIG_FILE $ARGS \
+            -eval 'krepl:zero_offsets(), init:stop().'
+        ;;
+    reset_offsets_from_file)
+        erl -pa $APP_DIR/deps/*/ebin $APP_DIR/ebin \
+            -setcookie $COOKIE -name $NODE_NAME \
+            -args_file $APP_DIR/config/vm.args \
+            -config $CONFIG_FILE $ARGS \
+            -eval "krepl:reset_offsets_from_file(\"$3\"), init:stop()."
+        ;;
+    reset_single_offset)
+        erl -pa $APP_DIR/deps/*/ebin $APP_DIR/ebin \
+            -setcookie $COOKIE -name $NODE_NAME \
+            -args_file $APP_DIR/config/vm.args \
+            -config $CONFIG_FILE $ARGS \
+            -eval "krepl:reset_single_offset(\"$3\", \"$4\"), init:stop()."
+        ;;
+    stop)
+        exec erl_call -c $COOKIE -name $NODE_NAME -a 'init stop'
+        ;;
+    *)
+        echo "Unknown command: $1"
+        ;;
+    esac
+
+exit 0
