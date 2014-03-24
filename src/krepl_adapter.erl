@@ -70,7 +70,7 @@ handle_info(adapt, State =
             CallbackState;
         {ok, {ConsumerOffset, Msgs}} ->
 
-            {ok, CallbackStateReply} = CallbackModule:handle(Msgs, ConsumerOffset, CallbackState),
+            {ok, CallbackStateReply} = CallbackModule:handle_messages(Msgs, ConsumerOffset, CallbackState),
 
             %{ok, _ProducerOffset} = kafka_producer:produce_ack(ProducerTopic, 0, Msgs, Producer),
             krepl_offsets:set_offset(ConsumerTopic, ConsumerOffset),
