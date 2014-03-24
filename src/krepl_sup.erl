@@ -20,8 +20,10 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
-    RedisHost = erlconf:get_value(krepl, redis_host),
-    RedisPort = erlconf:get_value(krepl, redis_port),
+    RedisHost      = erlconf:get_value(krepl, redis_host),
+    RedisPort      = erlconf:get_value(krepl, redis_port),
+    PeriodicPeriod = erlconf:get_value(krepl, periodic_period),
+    CallbackModule = erlconf:get_value(krepl, callback_module),
 
     Redis      = {krepl_redis,
         {krepl_redis, start_link, [krepl_redis, RedisHost, RedisPort]},
@@ -30,4 +32,14 @@ init([]) ->
         {krepl_adapter_sup, start_link, []},
         {permanent, 10}, 5000, supervisor, [krepl_apapter_sup]},
     RestartStrategy = {one_for_all, 100, 10},
-    {ok, { RestartStrategy, [Redis, AdapterSup]} }.
+    Children =
+    case PeriodicPeriod of
+        undefined ->
+            [Redis, AdapterSup];
+        Period ->
+            Periodic = {krepl_periodic,
+            {krepl_periodic, start_link, [Period, CallbackModule]},
+            {permanent, 10}, 5000, worker, [krepl_periodic]},
+            [Redis, AdapterSup, Periodic]
+    end,
+    {ok, { RestartStrategy, Children} }.
