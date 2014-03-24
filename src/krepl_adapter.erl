@@ -1,7 +1,7 @@
 -module(krepl_adapter).
 
 -behaviour(gen_server).
--export([start_link/4, init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3, status/1]).
+-export([start_link/4, init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3, status/1, aggregate_element/1]).
 
 -record(state, { consume_topic, consumer, calls, report, callback_module, callback_state }).
 
@@ -12,6 +12,9 @@ start_link(SourceHost, SourcePort, Topic, CallbackModule) ->
 
 status(Server) ->
     gen_server:call(Server, status).
+
+aggregate_element(Server) ->
+    gen_server:call(Server, aggregate_element).
 
 %% Callbacks
 
@@ -26,7 +29,13 @@ init([ConsumerHost, ConsumerPort, {Topic, CallbackData}, CallbackModule]) ->
 handle_call(status, _From, State =
     #state{ consume_topic = ConsumerTopic, consumer = Consumer }) ->
 
-{reply, offset_diff_and_status_line(ConsumerTopic, Consumer), State}.
+    {reply, offset_diff_and_status_line(ConsumerTopic, Consumer), State};
+
+handle_call(aggregate_element, _From, State =
+    #state{ consume_topic = ConsumerTopic, callback_module = CallbackModule, callback_state = CallbackState }) ->
+
+    {ok, Reply, CallbackStateNew} = CallbackModule:aggregate_element(CallbackState),
+    {reply, {ConsumerTopic, Reply}, State#state{ callback_state = CallbackStateNew }}.
 
 handle_cast(Msg, State) ->
     throw({cant_handle, Msg}),
