@@ -65,9 +65,12 @@ handle_info(adapt, State =
 
     CallbackStateNew =
     case kafka_consumer:fetch_with_offset(Consumer) of
-        {ok, {_, []}} ->
+        {ok, {ConsumerOffset, []}} ->
+
+            {ok, CallbackStateReply} = CallbackModule:handle_messages([], ConsumerOffset, CallbackState),
+
             erlang:send_after(500, self(), adapt),
-            CallbackState;
+            CallbackStateReply;
         {ok, {ConsumerOffset, Msgs}} ->
 
             {ok, CallbackStateReply} = CallbackModule:handle_messages(Msgs, ConsumerOffset, CallbackState),
