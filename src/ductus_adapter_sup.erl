@@ -1,4 +1,4 @@
--module(krepl_adapter_sup).
+-module(ductus_adapter_sup).
 
 -behaviour(supervisor).
 
@@ -20,19 +20,19 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
-    SourceHost             = erlconf:get_value(krepl, source_host),
-    SourcePort             = erlconf:get_value(krepl, source_port),
-    CallbackModule         = erlconf:get_value(krepl, callback_module),
-    TopicsAndCallbackDatas = erlconf:get_value(krepl, topics),
+    SourceHost             = erlconf:get_value(ductus, source_host),
+    SourcePort             = erlconf:get_value(ductus, source_port),
+    CallbackModule         = erlconf:get_value(ductus, callback_module),
+    TopicsAndCallbackDatas = erlconf:get_value(ductus, topics),
     Adapter = fun({Topic, CallbackData}) ->
         {process_name(Topic),
-         {krepl_adapter, start_link, [SourceHost, SourcePort, {Topic, CallbackData}, CallbackModule]},
-        permanent, brutal_kill, worker, [krepl_adapter]}
+         {ductus_adapter, start_link, [SourceHost, SourcePort, {Topic, CallbackData}, CallbackModule]},
+        permanent, brutal_kill, worker, [ductus_adapter]}
     end,
     Children = [Adapter(T) || T <- TopicsAndCallbackDatas],
     RestartStrategy = {one_for_one, 100, 10},
     {ok, { RestartStrategy, Children} }.
 
 process_name(Topic) ->
-    list_to_atom("krepl_adapter_" ++ Topic).
+    list_to_atom("ductus_adapter_" ++ Topic).
 

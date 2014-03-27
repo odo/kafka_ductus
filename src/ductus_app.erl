@@ -1,4 +1,4 @@
--module(krepl_app).
+-module(ductus_app).
 
 -behaviour(application).
 
@@ -10,7 +10,7 @@
 %% ===================================================================
 
 start(_StartType, _StartArgs) ->
-    krepl_sup:start_link().
+    ductus_sup:start_link().
 
 stop(_State) ->
     ok.

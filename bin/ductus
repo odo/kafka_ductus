@@ -1,10 +1,10 @@
 #!/bin/sh
-APP_MODULE=krepl
+APP_MODULE=ductus
 APP_DIR=`pwd`
-COOKIE="krepl_cookie"
+COOKIE="ductus_cookie"
 CONFIG_ENV=$2
 CONFIG_FILE="config/$CONFIG_ENV.config"
-NAME="krepl_$CONFIG_ENV"
+NAME="ductus_$CONFIG_ENV"
 NODE_NAME=$NAME@`hostname -f`
 
 # shift around so we have the argument in $1
@@ -25,14 +25,14 @@ case "$1" in
             -name $NODE_NAME \
             -s $APP_MODULE \
             -config $CONFIG_FILE $ARGS \
-            -krepl report true
+            -ductus report true
         ;;
     attach)
         erl -hidden -name ${NAME}_attacher_${RANDOM}@`hostname` -setcookie $COOKIE \
             -remsh $NODE_NAME
         ;;
     running)
-        REPLY=`erl_call -c $COOKIE -name $NODE_NAME -a 'krepl running' > /dev/stdout 2>&1`;
+        REPLY=`erl_call -c $COOKIE -name $NODE_NAME -a 'ductus running' > /dev/stdout 2>&1`;
         echo $REPLY
         if [ "$REPLY" == "true" ]; then
           echo "true"
@@ -41,42 +41,42 @@ case "$1" in
         fi
         ;;
     status)
-        exec erl_call -c $COOKIE -name $NODE_NAME -a 'krepl status' |sed 's/"//g'|sed 's/\\n/$/g' | tr "$" "\n"
+        exec erl_call -c $COOKIE -name $NODE_NAME -a 'ductus status' |sed 's/"//g'|sed 's/\\n/$/g' | tr "$" "\n"
         ;;
     reset_offsets)
         erl -pa $APP_DIR/deps/*/ebin $APP_DIR/ebin \
             -setcookie $COOKIE -name $NODE_NAME \
             -args_file $APP_DIR/config/vm.args \
             -config $CONFIG_FILE $ARGS \
-            -eval 'krepl:reset_offsets(), init:stop().'
+            -eval 'ductus:reset_offsets(), init:stop().'
         ;;
     reset_to_oldest_offsets)
         erl -pa $APP_DIR/deps/*/ebin $APP_DIR/ebin \
             -setcookie $COOKIE -name $NODE_NAME \
             -args_file $APP_DIR/config/vm.args \
             -config $CONFIG_FILE $ARGS \
-            -eval 'krepl:reset_to_oldest_offsets(), init:stop().'
+            -eval 'ductus:reset_to_oldest_offsets(), init:stop().'
         ;;
     zero_offsets)
         erl -pa $APP_DIR/deps/*/ebin $APP_DIR/ebin \
             -setcookie $COOKIE -name $NODE_NAME \
             -args_file $APP_DIR/config/vm.args \
             -config $CONFIG_FILE $ARGS \
-            -eval 'krepl:zero_offsets(), init:stop().'
+            -eval 'ductus:zero_offsets(), init:stop().'
         ;;
     reset_offsets_from_file)
         erl -pa $APP_DIR/deps/*/ebin $APP_DIR/ebin \
             -setcookie $COOKIE -name $NODE_NAME \
             -args_file $APP_DIR/config/vm.args \
             -config $CONFIG_FILE $ARGS \
-            -eval "krepl:reset_offsets_from_file(\"$3\"), init:stop()."
+            -eval "ductus:reset_offsets_from_file(\"$3\"), init:stop()."
         ;;
     reset_single_offset)
         erl -pa $APP_DIR/deps/*/ebin $APP_DIR/ebin \
             -setcookie $COOKIE -name $NODE_NAME \
             -args_file $APP_DIR/config/vm.args \
             -config $CONFIG_FILE $ARGS \
-            -eval "krepl:reset_single_offset(\"$3\", \"$4\"), init:stop()."
+            -eval "ductus:reset_single_offset(\"$3\", \"$4\"), init:stop()."
         ;;
     stop)
         exec erl_call -c $COOKIE -name $NODE_NAME -a 'init stop'

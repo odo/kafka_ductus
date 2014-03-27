@@ -1,11 +1,11 @@
--module(krepl_offsets).
+-module(ductus_offsets).
 
 -compile(export_all).
 
 offset(Topic) when is_binary(Topic) ->
     offset(binary_to_list(Topic));
 offset(Topic) ->
-    {ok, Offset} = eredis:q(krepl_redis, ["HGET", krepl:handler_name(), Topic]),
+    {ok, Offset} = eredis:q(ductus_redis, ["HGET", ductus:handler_name(), Topic]),
     case Offset of
         undefined ->
             throw({error, {cound_not_get_offset, Topic}});
@@ -18,7 +18,7 @@ set_offset({ConsumerTopic, _}, Offset) ->
 set_offset(Topic, Offset) when is_binary(Topic) ->
     set_offset(binary_to_list(Topic), Offset);
 set_offset(Topic, Offset) ->
-    eredis:q(krepl_redis, ["HSET", krepl:handler_name(), Topic, Offset]).
+    eredis:q(ductus_redis, ["HSET", ductus:handler_name(), Topic, Offset]).
 
 offset_from_kafka(Topic, Consumer, NewestOrOldest) ->
     NewestOrOldestInt =
@@ -37,16 +37,16 @@ reset_to_oldest_offsets() ->
     reset_offsets(oldest).
 
 reset_offsets(NewestOrOldest) ->
-    {Host, Port} = case erlconf:get_value(krepl, initial_offset_source) of
+    {Host, Port} = case erlconf:get_value(ductus, initial_offset_source) of
         source ->
-            {erlconf:get_value(krepl, source_host),
-             erlconf:get_value(krepl, source_port)};
+            {erlconf:get_value(ductus, source_host),
+             erlconf:get_value(ductus, source_port)};
         target ->
-            {erlconf:get_value(krepl, target_host),
-             erlconf:get_value(krepl, target_port)}
+            {erlconf:get_value(ductus, target_host),
+             erlconf:get_value(ductus, target_port)}
     end,
-    lager:info("resetting offsets for ~p from kafka at ~p:~p\n", [krepl:handler_name(), Host, Port]),
-    Topics = erlconf:get_value(krepl, topics),
+    lager:info("resetting offsets for ~p from kafka at ~p:~p\n", [ductus:handler_name(), Host, Port]),
+    Topics = erlconf:get_value(ductus, topics),
     [reset_offset(Topic, Host, Port, NewestOrOldest) || Topic <- Topics].
 
 reset_offset(Topic, Host, Port, NewestOrOldest) when is_list(Topic) ->
@@ -62,5 +62,5 @@ reset_offset({SourceTopic, _}, Host, Port, NewestOrOldest) ->
     set_offset(SourceTopic, Offset).
 
 zero_offsets() ->
-    Topics = erlconf:get_value(krepl, topics),
+    Topics = erlconf:get_value(ductus, topics),
     [set_offset(Topic, 0) || Topic <- Topics].

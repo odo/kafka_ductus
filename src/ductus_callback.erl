@@ -1,4 +1,4 @@
--module(krepl_callback).
+-module(ductus_callback).
 
 -callback init(Topic :: list(), InitData :: term()) ->
     tuple('ok', State :: term()) | tuple('error', Reason :: term()).

@@ -1,4 +1,4 @@
-{application, krepl,
+{application, ductus,
  [
   {description, ""},
   {vsn, "1"},
@@ -7,6 +7,6 @@
                   kernel,
                   stdlib
                  ]},
-  {mod, { krepl_app, []}},
+  {mod, { ductus_app, []}},
   {env, [{report, false}]}
  ]}.

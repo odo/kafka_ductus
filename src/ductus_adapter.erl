@@ -1,4 +1,4 @@
--module(krepl_adapter).
+-module(ductus_adapter).
 
 -behaviour(gen_server).
 -export([start_link/4, init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3, status/1, aggregate_element/1]).
@@ -42,11 +42,11 @@ handle_cast(Msg, State) ->
     {noreply, State}.
 
 handle_info({init, {ConsumerHost, ConsumerPort, {ConsumerTopicString, CallbackData}, CallbackModule}}, undefined) ->
-    Report = erlconf:get_value(krepl, report),
+    Report = erlconf:get_value(ductus, report),
 
     ConsumerTopic = list_to_binary(ConsumerTopicString),
     {ok, Consumer} = kafka_consumer:start_link(ConsumerHost, ConsumerPort, ConsumerTopic, 0, 0, fun noop/3, 10000),
-    Offset         = krepl_offsets:offset(ConsumerTopic),
+    Offset         = ductus_offsets:offset(ConsumerTopic),
     ok             = kafka_consumer:set_offset(Consumer, Offset),
 
     {ok, CallbackState}  = CallbackModule:init(ConsumerTopic, CallbackData),
@@ -76,7 +76,7 @@ handle_info(adapt, State =
             {ok, CallbackStateReply} = CallbackModule:handle_messages(Msgs, ConsumerOffset, CallbackState),
 
             %{ok, _ProducerOffset} = kafka_producer:produce_ack(ProducerTopic, 0, Msgs, Producer),
-            krepl_offsets:set_offset(ConsumerTopic, ConsumerOffset),
+            ductus_offsets:set_offset(ConsumerTopic, ConsumerOffset),
             self() ! adapt,
             CallbackStateReply
     end,
@@ -106,7 +106,7 @@ status_line(ConsumerTopic, Consumer) ->
 
 offset_diff_and_status_line(ConsumerTopic, Consumer) ->
     {ok, CurrentOffset} = kafka_consumer:get_current_offset(Consumer),
-    OffsetDiff  = krepl_offsets:offset_from_kafka(ConsumerTopic, Consumer, newest) - CurrentOffset,
+    OffsetDiff  = ductus_offsets:offset_from_kafka(ConsumerTopic, Consumer, newest) - CurrentOffset,
     Lag         = round(OffsetDiff / (1024.0 * 1024.0)),
     OffsetStr   = integer_to_list(CurrentOffset),
     LagStr      = integer_to_list(Lag),

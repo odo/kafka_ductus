@@ -1,6 +1,6 @@
 % Dealing with jiffy
 %
--module (krepl_json).
+-module (ductus_json).
 -compile ([export_all]).
 
 % Insert a new element to the JSON-object.

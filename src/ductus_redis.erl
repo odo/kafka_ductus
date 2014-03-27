@@ -1,4 +1,4 @@
--module(krepl_redis).
+-module(ductus_redis).
 -export([start_link/3]).
 
 start_link(Name, Host, Port) ->
