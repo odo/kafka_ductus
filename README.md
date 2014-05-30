@@ -5,6 +5,8 @@ kafka_ductus is an Erlang application to consume messages from kafka.
 
 It fetches messages (1MB at a time) from a set of topics from kafka, parses the mesages for you and feeds them into your callback module.
 
+tl;dr here is an example [kafka2file](https://github.com/odo/kafka2file).
+
 # Prerequisites
 
 You need:
