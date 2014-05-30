@@ -19,10 +19,8 @@ running() ->
 status() ->
     SourceHost = erlconf:get_value(ductus, source_host),
     SourcePort = erlconf:get_value(ductus, source_port),
-    TargetHost = erlconf:get_value(ductus, target_host),
-    TargetPort = erlconf:get_value(ductus, target_port),
-    Repl = io_lib:format("replicator '~s' from ~s:~s to ~s:~s\n",
-         [ductus:handler_name(), SourceHost, integer_to_list(SourcePort), TargetHost, integer_to_list(TargetPort)]),
+    Repl = io_lib:format("kafka_ductus '~s' from ~s:~s\n",
+         [ductus:handler_name(), SourceHost, integer_to_list(SourcePort)]),
     Status = case whereis(ductus_adapter_sup) of
         undefined ->
             "Error: Adapter supervisor not running.";

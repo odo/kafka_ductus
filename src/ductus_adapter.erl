@@ -51,7 +51,7 @@ handle_info({init, {ConsumerHost, ConsumerPort, {ConsumerTopicString, CallbackDa
 
     {ok, CallbackState}  = CallbackModule:init(ConsumerTopic, CallbackData),
 
-    lager:info("Starting replication from ~p \t using ~p \t at offset ~p .", [ConsumerTopic, CallbackModule, Offset]),
+    lager:info("Starting kafka_ductus from ~p \t using ~p \t at offset ~p .", [ConsumerTopic, CallbackModule, Offset]),
     % enter the loop
     self() ! adapt,
 
@@ -113,7 +113,7 @@ offset_diff_and_status_line(ConsumerTopic, Consumer) ->
     ConsumerTopicStrEq  = string:left(binary_to_list(ConsumerTopic), 10, 32),
     LagStrEq    = string:right(LagStr,    10, 32),
     OffsetStrEq = string:right(OffsetStr, 20, 32),
-    StatusLine = ConsumerTopicStrEq ++ "->    " ++ OffsetStrEq ++ " Offset" ++ LagStrEq ++ " MB lag\n",
+    StatusLine = ConsumerTopicStrEq ++ ": " ++ OffsetStrEq ++ " Offset" ++ LagStrEq ++ " MB lag\n",
     {OffsetDiff, StatusLine}.
 
 noop(_, _, _) -> noop.

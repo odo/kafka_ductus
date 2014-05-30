@@ -1,150 +1,153 @@
-kafka_0.6_replicator (krepl)
+kafka_ductus
 ============================
 
-krepl is an Erlang application to continuously replicate a set of topics from one kafka 0.6 broker to another.
+kafka_ductus is an Erlang application to consume messages from kafka.
+
+It fetches messages (1MB at a time) from a set of topics from kafka, parses the mesages for you and feeds them into your callback module. kafa_ductus
 
 # Prerequisites
 
-In order to use krepl, you need two kafka brokers (source and target) and a redis instance to keep offsets.
+You need:
+
+1. [Erlang](http://erlang.org)
+* A [kafka 0.6](http://sna-projects.com/kafka/downloads.php) broker you want to read from
+* A [redis](http://redis.io) server to save state
 
 # Building
 
 ```
-git clone git@github.com:wooga/kafka_0.6_replicator.git
-cd kafka_0.6_replicator
+git clone git@github.com:odo/kafka_ductus.git
+cd kafka_ductus
 make
-```
-
-To install zsh completion for `bin/krepl`:
-```
-sudo make completion
 ```
 
 # Configuration
 
-`config/krepl.config`
+kafka_ductus uses [erlconf](https://github.com/wooga/erlconf) so you have `/config/default.conf` for your base configuration and `conf/{your_config}.conf` for the more specific stuff.
+
+`config/examples.config`:
 
 ```
 [
-    {lager, [
-        {handlers, [
-            {lager_console_backend, info},
-            {lager_file_backend, [{file, "log/error.log"}, {level, error}]},
-            {lager_file_backend, [{file, "log/console.log"}, {level, info}]}
-    ]}]},
-    {krepl, [
+    {ductus, [
+        {source_host, "kafka-primary.acc"},
+        {source_port, 9092},
+
         {redis_host, "127.0.0.1"},
         {redis_port, 6379},
 
-        {initial_offset_source, target},
+        {initial_offset_source, source},
 
-        % from live to dev
-        {handler_name, "live_to_dev"},
-        {source_host, "kafka.sys11"},
-        {source_port, 9092},
-        {target_host, "127.0.0.1"},
-        {target_port, 9092},
-
-        {pool_size, 5},
+        {handler_name, "kafka_ductus"},
+        {periodic_period, 10000}
+        {callback_module, ductus_example_handler},
         {topics, [
-         "ahi",
-         {"bi", "bi_dup"},
-         "bim",
-         "bri"
+         {"test", {}}
         ]}
     ]}
-
 ].
 ```
 
-The config file defines where redis and the two kafkas live and which topics should be replicated (either as a string or a 2-tuple {source, target}). `handler_name` is the identifier of the replicator used in redis.
-
-The value of `initial_offset_source` defines where krepl starts replicating. The value `source` is used when to start at the sources newest offset. With `target` it uses the newest target offset, which only makes sense when the offsets of both source and target are equivalent (pointing to the same data).
-
-`local_to_local` is the example handler name here.
+* `source_host`, `source_port`: the kafka you are reading from
+* `redis_host`, `redis_port`: redis
+* `handler_name`: used to name the node and as a key for redis
+* `callback_module`: the name of your callback module
+* `periodic_period`: the time between calls to `handle_periodic_aggregate` in your callback module
+* `topics`: a list of topics in the form of `{topic_name, handler_init_data}`
 
 # Starting, Stopping etc.
 
-All important functions are called via `bin/krepl`.
+All important functions are called via `bin/ductus`.
 
 ## Resetting Offsets
 
-Before starting, the offsets have to be (re)set. You have different options:
+Before starting, the offsets have to be (re)set. You have different options (`local_to_local` is your config in this example):
 
-Reset to most latest offsets (Head):
+Reset to most recent offsets (Head):
 
-`./bin/krepl reset_offsets local_to_local`
+`./bin/ductus reset_offsets local_to_local`
 
-Reset to earliest offsets:
+Reset to earliest/latest available offsets:
 
-`./bin/krepl reset_to_oldest_offsets local_to_local`
+`./bin/ductus reset_to_oldest_offsets local_to_local`
 
 Reset all offsets to 0:
 
-`./bin/krepl zero_offsets local_to_local`
+`./bin/ductus zero_offsets local_to_local`
 
 Reset an offset for a single topic:
 
-`./bin/krepl reset_single_offset local_to_local the_topic 123`
+`./bin/ductus reset_single_offset local_to_local the_topic 123`
 
 
 Reset offsets from a JSON file with the structure
 
 ```
-{"results":[{"topic":"ahi","offset":2732945670},{"topic":"pla","offset":18992525,}]}
+{"results":[{"topic":"topic1","offset":2732945670},{"topic":"topic2","offset":18992525,}]}
 ```
 
-`./bin/krepl reset_offsets_from_file local_to_local offsets.json`
+`./bin/ductus reset_offsets_from_file local_to_local offsets.json`
 
 This can be used with the output from [kafka_bisect](https://github.com/wooga/kafka_bisect).
 
 
 ## Starting and attaching
 
-You can either start krepl as a daemon: `bin/krepl start local_to_local`
+You can either start ductus as a daemon: `bin/ductus start local_to_local`
 
-Or you can start it in a console: `bin/krepl console local_to_local`
+Or you can start it in a console: `bin/ductus console local_to_local`
 
-Use `bin/krepl attach local_to_local` to attach to a running node (use ctrl-c ctrl-c to detach).
+Use `bin/ductus attach local_to_local` to attach to a running node (use ctrl-c ctrl-c to detach).
 
 ## Stopping
 
-`bin/krepl stop local_to_local`
+`bin/ductus stop local_to_local`
 
 ## Status
 
-`bin/krepl status local_to_local` shows the current offsets and lags for each topic.
+`bin/ductus status local_to_local` shows the current offsets and lags for each topic.
 
 ```
-replicator 'live_to_dev' from kafka.sys11:9092 to 127.0.0.1:9092
-ahi        ->    ahi          2732945670 Offset         0 MB lag
-bi         ->    bi_dup    4463104280542 Offset      1672 MB lag
-bim        ->    bim       1172574050123 Offset         0 MB lag
-bri        ->    bri           425740700 Offset         0 MB lag
+kafka_ductus 'kafka_ductus' from kafka-primary.acc:9092
+test      :          10253927224 Offset      3405 MB lag
 
-Total lag: 1753219072 Bytes
+Total lag: 3570864347 Bytes
 ```
 
 ## Adding topics
 
-In order to add topics add them to the config and then stop and start the application.
+In order to add topics add them to the config and then stop the application, set the offset for the new topics and start the application.
 
-## krepl internals
+## The callback module
+
+your application logic lives in a callback module which must implement the `ductus_callback` behaviour:
+
+* `init/2` is used to init the state of your handler. Arguments are the topic name and the init data specified in the config file. The return value must be {ok, State}.
+
+* `handle_massages/3` is called with a set of massages (~ 1 MB), the current kafka offset and your callback's state. The return value must be {ok, State}.
+
+* `aggregate_element/1` is called with your callback's state. It is used to periodicly collect data from all adapters. Returns {ok, Element, State}.
+
+* `handle_periodic_aggregate` is called with an orddict where the keys are the topic names (in binary) and values are the elements returned by `aggregate_element/1`. The return value is ignored.
+
+## ductus internals
 
 ### Application structure
 
 ![supervision tree](../master/doc/supervision_tree.png?raw=true "supervision tree")
 
-The root supervisor `krepl_sup` (a [supervisor2](https://github.com/odo/supervisor2)) has two children:
+The root supervisor `ductus_sup` (a [supervisor2](https://github.com/odo/supervisor2)) has three children:
 
-* `krepl_redis` is a [redis server](https://github.com/wooga/eredis) which is used by the adapters to write their current offsets.
+* `ductus_adapter_sup` supervises a set of `ductus_adapter` processes, one for each topic. Each `ductus_adapter` process has one [consumer server](https://github.com/wooga/kafka-erlang/blob/master/src/kafka_consumer.erl) to retrieve massages from the kafka broker.
 
-* `krepl_adapter_sup` supervises a set of `krepl_adapter` processes, one for each topic. Each `krepl_adapter` process has one [consumer server](https://github.com/wooga/kafka-erlang/blob/master/src/kafka_consumer.erl) to retrieve massages from the source kafka broker and one [producer server](https://github.com/wooga/kafka-erlang/blob/master/src/kafka_producer.erl) to write messages to the target kafka.
+* `ductus_perodic` aggregates data from all topics and passes it to the function `handle_periodic_aggregate/1` in your callback module.
 
-`krepl_adapter` processes are the prime movers of the system passing through a loop:
+* `ductus_redis` is a [redis server](https://github.com/wooga/eredis) which is used by the adapters to write their current offsets.
+
+`ductus_adapter` processes are the prime movers of the system passing through a loop:
 
 1. get new messages and current offset from attached consumer
-* write messages to producer
+* pass messages to callback module and wait for return
 * write current offset to redis
 * repeat
 
@@ -155,10 +158,11 @@ For any type of failure (internal exception, connection error to one of the kafk
 A: The process that exited is restarted by its supervisor and tries to resume its task.
 
 
-If (A) fails a number of times (e.g. 100 times in 10 seconds) the supervisor of the failing process dies and escalates the problem to `krepl_sup`.
+If (A) fails a number of times (e.g. 100 times in 10 seconds) the supervisor of the failing process dies and escalates the problem to `ductus_sup`.
 
-B: `krepl_sup` will stop all processes of the applications and tries to restart everything in order.
+B: `ductus_sup` will stop all processes of the applications and tries to restart everything in order.
 
 If (B) fails a number of times (e.g. 100 times in 10 seconds):
 
-C: 'krepl_sup' will fall back to restarting everything every 10 seconds. Forever.
+C: 'ductus_sup' will fall back to restarting everything every 10 seconds. Forever.
+

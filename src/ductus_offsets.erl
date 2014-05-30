@@ -30,7 +30,7 @@ parse_kafka_offset(_, {ok, [Offset]}) ->
 parse_kafka_offset(Topic, Other) ->
     throw({error, {cound_not_get_kafka_offset, {Topic, Other}}}).
 
-reset_offset() ->
+reset_offsets() ->
     reset_offsets(newest).
 
 reset_to_oldest_offsets() ->
