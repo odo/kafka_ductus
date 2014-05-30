@@ -26,7 +26,11 @@ handle_info(act, {Period, CallbackModule}) ->
     Elapsed = round(timer:now_diff(os:timestamp(), Before) / 1000),
     Delay   = max(0, Period - Elapsed),
     erlang:send_after(Delay, self(), act),
-    {noreply, {Period, CallbackModule}}.
+    {noreply, {Period, CallbackModule}};
+
+% this is probably a late reply from one of the adapters
+handle_info({Ref, _}, State) when is_reference(Ref) ->
+    {noreply, State}.
 
 terminate(_Reason, _State) ->
     ok.
