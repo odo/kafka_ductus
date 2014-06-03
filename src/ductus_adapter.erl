@@ -73,7 +73,8 @@ handle_info(adapt, State = #state{
     {noreply, State#state{ calls = Calls + 1, callback_state = CallbackStateNew, buffer = NewBuffer }}.
 
 fetch(undefined, Consumer) ->
-    kafka_consumer:fetch_with_offset(Consumer);
+    {ok, OffsetAndMsgs} = kafka_consumer:fetch_with_offset(Consumer),
+    OffsetAndMsgs;
 fetch(Buffer, _) ->
     Buffer.
 

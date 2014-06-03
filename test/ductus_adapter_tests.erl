@@ -69,7 +69,7 @@ test_callback_consumption() ->
     % new messages are fetched
     % and delivered, only incrementing the counter
     meck:expect(kafka_consumer, fetch_with_offset,
-        fun(consumer) -> {53, [1, 2 ,3]} end),
+        fun(consumer) -> {ok, {53, [1, 2 ,3]}} end),
     meck:expect(test_callback, handle_messages,
         fun([1, 2, 3], 53, callback_state) -> {ok, callback_state2}
     end),
@@ -86,7 +86,7 @@ test_callback_defer() ->
     % messages and offset kept in the buffer and no offset
     % is persisted
     meck:expect(kafka_consumer, fetch_with_offset,
-        fun(consumer) -> {53, [1, 2 ,3]} end),
+        fun(consumer) -> {ok, {53, [1, 2 ,3]}} end),
     meck:expect(test_callback, handle_messages,
         fun([1, 2, 3], 53, callback_state) -> {defer, 0, callback_state2}
     end),
