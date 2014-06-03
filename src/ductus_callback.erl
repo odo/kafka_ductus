@@ -4,7 +4,7 @@
     tuple('ok', State :: term()) | tuple('error', Reason :: term()).
 
 -callback handle_messages(Massages :: list(binary()), Offset :: integer(), State :: term()) ->
-    tuple('ok', State :: term()) | tuple('error', Reason :: term()).
+    tuple('ok', State :: term()) | tuple('defer', Delay :: integer(), State :: term()) | tuple('error', Reason :: term()).
 
 -callback aggregate_element(State :: term()) ->
     tuple('ok', Reply :: term(), State :: term()) | tuple('error', Reason :: term()).

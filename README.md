@@ -126,7 +126,7 @@ your application logic lives in a callback module which must implement the `duct
 
 * `init/2` is used to init the state of your handler. Arguments are the topic name and the init data specified in the config file. The return value must be {ok, State}.
 
-* `handle_massages/3` is called with a set of massages (~ 1 MB), the current kafka offset and your callback's state. The return value must be {ok, State}.
+* `handle_massages/3` is called with a set of massages (~ 1 MB), the current kafka offset and your callback's state. The return value {ok, State} means the messages have been consumed, whereas {defer, Delay, State} means the messages can not be processed now and should be re-deliversed after Delay milliseconds.
 
 * `aggregate_element/1` is called with your callback's state. It is used to periodicly collect data from all adapters. Returns {ok, Element, State}.
 
