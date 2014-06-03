@@ -124,13 +124,41 @@ In order to add topics add them to the config and then stop the application, set
 
 your application logic lives in a callback module which must implement the `ductus_callback` behaviour:
 
-* `init/2` is used to init the state of your handler. Arguments are the topic name and the init data specified in the config file. The return value must be {ok, State}.
+#### init/2
 
-* `handle_massages/3` is called with a set of massages (~ 1 MB), the current kafka offset and your callback's state. The return value {ok, State} means the messages have been consumed, whereas {defer, Delay, State} means the messages can not be processed now and should be re-delivered after Delay milliseconds.
+```
+-callback init(Topic :: list(), InitData :: term()) ->
+    tuple('ok', State :: term()) | tuple('error', Reason :: term()).
+```
 
-* `aggregate_element/1` is called with your callback's state. It is used to periodicly collect data from all adapters. Returns {ok, Element, State}.
+`init/2` is used to init the state of your handler. Arguments are the topic name and the init data specified in the config file. The return value must be {ok, State}.
 
-* `handle_periodic_aggregate` is called with an orddict where the keys are the topic names (in binary) and values are the elements returned by `aggregate_element/1`. The return value is ignored.
+#### handle_massages/3
+
+```
+-callback handle_messages(Massages :: list(binary()), Offset :: integer(), State :: term()) ->
+    tuple('ok', State :: term()) | tuple('defer', Delay :: integer(), State :: term()) | tuple('error', Reason :: term()).
+```
+
+`handle_massages/3` is called with a set of massages (~ 1 MB), the current kafka offset and your callback's state. The return value {ok, State} means the messages have been consumed, whereas {defer, Delay, State} means the messages can not be processed now and should be re-delivered after Delay milliseconds.
+
+#### aggregate_element/1
+
+```
+-callback aggregate_element(State :: term()) ->
+    tuple('ok', Reply :: term(), State :: term()) | tuple('error', Reason :: term()).
+```
+
+`aggregate_element/1` is called with your callback's state. It is used to periodicly collect data from all adapters. Returns {ok, Element, State}.
+
+#### handle_periodic_aggregate/1
+
+```
+-callback handle_periodic_aggregate(Aggregate :: tuple()) ->
+    'ok' | tuple('error', Reason :: term()).
+```
+
+`handle_periodic_aggregate/1` is called with an orddict where the keys are the topic names (in binary) and values are the elements returned by `aggregate_element/1`. The return value is ignored.
 
 ## ductus internals
 
